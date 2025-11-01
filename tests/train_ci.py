@@ -83,23 +83,22 @@ def train_model():
         registered_model = mlflow.register_model(model_uri, "iris")
         print(f"Registered model version: {registered_model.version}")
         
-        # Try to promote to Production
-        try:
-            from mlflow.tracking import MlflowClient
-            client = MlflowClient()
-            client.transition_model_version_stage(
-                name="iris",
-                version=registered_model.version,
-                stage="Production",
-                archive_existing_versions=True
-            )
-            print(f"Model version {registered_model.version} promoted to Production")
-        except Exception as e:
-            print(f"Note: Could not promote model to Production: {e}")
-            print("This is expected in some CI environments")
+        # Promote to Production (required for Flask app to load it)
+        from mlflow.tracking import MlflowClient
+        client = MlflowClient()
+        client.transition_model_version_stage(
+            name="iris",
+            version=registered_model.version,
+            stage="Production",
+            archive_existing_versions=True
+        )
+        print(f"✓ Model version {registered_model.version} promoted to Production")
+        
     except Exception as e:
-        print(f"Note: Could not register model: {e}")
-        print("This is expected in some CI environments without model registry")
+        print(f"ERROR: Failed to register/promote model: {e}")
+        print(f"Model URI: {model_uri}")
+        print(f"MLflow tracking URI: {os.getenv('MLFLOW_TRACKING_URI')}")
+        raise  # Re-raise to fail the CI pipeline if registration fails
     
     return best_run_id, best_acc
 

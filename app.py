@@ -6,8 +6,14 @@ import os
 # Allow all hosts to connect to Mlflow
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 
-# Configure MLflow tracking URI
+# Configure MLflow tracking URI and authentication
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5050"))
+
+# Set MLflow authentication if credentials are provided
+if os.getenv("MLFLOW_TRACKING_USERNAME"):
+    os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("MLFLOW_TRACKING_USERNAME")
+if os.getenv("MLFLOW_TRACKING_PASSWORD"):
+    os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("MLFLOW_TRACKING_PASSWORD")
 
 app = Flask(__name__)
 

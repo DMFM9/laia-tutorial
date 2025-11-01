@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -144,6 +144,8 @@ jobs:
             --name flask-e2e \
             -p 8080:8080 \
             -e MLFLOW_TRACKING_URI=${{ env.MLFLOW_TRACKING_URI }} \
+            -e MLFLOW_TRACKING_USERNAME=${{ secrets.MLFLOW_USERNAME }} \
+            -e MLFLOW_TRACKING_PASSWORD=${{ secrets.MLFLOW_PASSWORD }} \
             flask-app:${{ github.sha }}
           
           # Wait for Flask to be ready
