@@ -126,6 +126,7 @@ jobs:
             -e MLFLOW_TRACKING_USERNAME \
             -e MLFLOW_TRACKING_PASSWORD \
             -e MLFLOW_MODEL_NAME \
+            -e MLFLOW_EXPERIMENT_NAME \
             training:${{ github.sha }}
 
       - name: Extract metadata (same rules as build)
