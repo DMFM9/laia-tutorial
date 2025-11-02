@@ -140,7 +140,7 @@ jobs:
       - name: Tag image as staging
         run: |
           docker tag \
-            ghcr.io/${{ github.repository }}/serving:${{ github.sha }} \
+            serving:${{ github.sha }} \
             ghcr.io/${{ github.repository }}/serving:staging
 
       - name: Push staging tag
