@@ -1,4 +1,4 @@
-name: Continuous Staging
+name: 3 - Continuous Staging
 
 on:
   workflow_run:
@@ -7,7 +7,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  FLASK_IMAGE_NAME: ${{ github.repository }}/serving
   MLFLOW_TRACKING_URI: http://dsn2026hotcrp.dei.uc.pt:8080
   MLFLOW_EXPERIMENT_NAME: iris_test_jrc
   MLFLOW_MODEL_NAME: iris_model_name
