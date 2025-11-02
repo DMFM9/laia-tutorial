@@ -10,8 +10,8 @@ source .env
 REGISTRY="ghcr.io"
 IMAGE_NAME="jrcampos/laia-tutorial/serving"
 MLFLOW_TRACKING_URI="http://dsn2026hotcrp.dei.uc.pt:8080"
-MLFLOW_MODEL_NAME="iris_model_name"
-MODEL_STAGE="production"
+MLFLOW_MODEL_NAME="iris_model_joao_r_campos"
+ALIAS="production"
 
 # These two must be passed in environment before running script
 : "${GITHUB_USERNAME:?Need GITHUB_USERNAME env var}"
@@ -27,7 +27,7 @@ echo "$GITHUB_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_USERNAME" --password
 # Pull image
 # -------------------------------
 echo "Pulling production image..."
-docker pull "$REGISTRY/$IMAGE_NAME:production"
+docker pull "$REGISTRY/$IMAGE_NAME:$ALIAS"
 
 # -------------------------------
 # Stop existing container
@@ -47,12 +47,12 @@ echo "Starting new serving-app container..."
 
 docker run -d \
   --name serving-app \
-  -p 8080:8080 \
+  -p 9000:8080 \
   -e MLFLOW_TRACKING_URI="$MLFLOW_TRACKING_URI" \
   -e MLFLOW_MODEL_NAME="$MLFLOW_MODEL_NAME" \
   -e MLFLOW_TRACKING_USERNAME="$MLFLOW_TRACKING_USERNAME" \
   -e MLFLOW_TRACKING_PASSWORD="$MLFLOW_TRACKING_PASSWORD" \
-  -e MODEL_STAGE="$MODEL_STAGE" \
+  -e MODEL_STAGE="$ALIAS" \
   "$REGISTRY/$IMAGE_NAME:production"
 
 echo "✅ Deployment done successfully."

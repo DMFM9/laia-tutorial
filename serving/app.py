@@ -16,10 +16,6 @@ if not MODEL_NAME:
     raise EnvironmentError("Missing required env var: MLFLOW_MODEL_NAME")
 
 MODEL_ALIAS = os.getenv("MODEL_ALIAS")
-# MODEL_ALIAS = "production"
-# if not MODEL_ALIAS:
-# raise RuntimeError("❌ Environment variable MODEL_ALIAS is required but not set.")
-
 
 # Try to load model once on startup
 try:
@@ -31,6 +27,23 @@ except Exception as e:
     app.config["MODEL"] = None
     print(f"Could not load model at startup: {e}")
     print("App will start without a model. You can load it later using /reload.")
+
+
+@app.route("/model-info", methods=["GET"])
+def model_info():
+    """Return current model alias version + run ID hash"""
+    try:
+        from mlflow.tracking import MlflowClient
+        client = MlflowClient()
+        alias_info = client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
+        return jsonify(
+            model_name=MODEL_NAME,
+            alias=MODEL_ALIAS,
+            version=alias_info.version,
+            run_id=alias_info.run_id,  # Commit SHA is stored in run_id (if you passed it)
+        )
+    except Exception as e:
+        return jsonify(error=str(e)), 500
 
 
 @app.route("/health", methods=["GET"])
@@ -65,7 +78,7 @@ def predict():
         return jsonify(error=f"Prediction failed: {str(e)}"), 500
 
 
-@app.route("/reload", methods=["POST"])
+@app.route("/reload", methods=["GET"])
 def reload_model():
     """Reload model from MLflow and store in Flask app config."""
     try:
