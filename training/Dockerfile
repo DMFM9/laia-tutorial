@@ -25,4 +25,4 @@ COPY training/ .
 RUN uv sync --frozen
 
 # ---- By default, run the CI training ----
-ENTRYPOINT ["uv", "run", "python", "train_ci.py"]
+ENTRYPOINT ["uv", "run", "python", "train_model.py"]
