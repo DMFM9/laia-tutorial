@@ -10,7 +10,7 @@ source .env
 REGISTRY="ghcr.io"
 IMAGE_NAME="jrcampos/laia-tutorial/serving"
 MLFLOW_TRACKING_URI="http://dsn2026hotcrp.dei.uc.pt:8080"
-MLFLOW_MODEL_NAME="iris_model_joao_r_campos"
+MLFLOW_MODEL_NAME="iris_cicd_model_joao_r_campos"
 ALIAS="production"
 
 # These two must be passed in environment before running script
@@ -45,14 +45,14 @@ fi
 # -------------------------------
 echo "Starting new serving-app container..."
 
-docker run -d \
+docker run \
   --name serving-app \
   -p 9000:8080 \
   -e MLFLOW_TRACKING_URI="$MLFLOW_TRACKING_URI" \
   -e MLFLOW_MODEL_NAME="$MLFLOW_MODEL_NAME" \
   -e MLFLOW_TRACKING_USERNAME="$MLFLOW_TRACKING_USERNAME" \
   -e MLFLOW_TRACKING_PASSWORD="$MLFLOW_TRACKING_PASSWORD" \
-  -e MODEL_STAGE="$ALIAS" \
+  -e MODEL_ALIAS="$ALIAS" \
   "$REGISTRY/$IMAGE_NAME:production"
 
 echo "✅ Deployment done successfully."
