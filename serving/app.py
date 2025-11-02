@@ -8,28 +8,41 @@ os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 
 # Configure MLflow tracking URI and authentication
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5050"))
-
-# Set MLflow authentication if credentials are provided
-if os.getenv("MLFLOW_TRACKING_USERNAME"):
-    os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("MLFLOW_TRACKING_USERNAME")
-if os.getenv("MLFLOW_TRACKING_PASSWORD"):
-    os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("MLFLOW_TRACKING_PASSWORD")
-
 app = Flask(__name__)
 
-MODEL_NAME = "iris"
-MODEL_STAGE = "Production"
+MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
+if not MODEL_NAME:
+    raise EnvironmentError("Missing required env var: MLFLOW_MODEL_NAME")
+
+MODEL_ALIAS = os.getenv("MODEL_ALIAS")
 
 # Try to load model once on startup
 try:
     app.config["MODEL"] = mlflow.pyfunc.load_model(
-        model_uri=f"models:/{MODEL_NAME}/{MODEL_STAGE}"
+        model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
     )
     print("Model loaded successfully at startup.")
 except Exception as e:
     app.config["MODEL"] = None
     print(f"Could not load model at startup: {e}")
     print("App will start without a model. You can load it later using /reload.")
+
+
+@app.route("/model-info", methods=["GET"])
+def model_info():
+    """Return current model alias version + run ID hash"""
+    try:
+        from mlflow.tracking import MlflowClient
+        client = MlflowClient()
+        alias_info = client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
+        return jsonify(
+            model_name=MODEL_NAME,
+            alias=MODEL_ALIAS,
+            version=alias_info.version,
+            run_id=alias_info.run_id,  # Commit SHA is stored in run_id (if you passed it)
+        )
+    except Exception as e:
+        return jsonify(error=str(e)), 500
 
 
 @app.route("/health", methods=["GET"])
@@ -64,11 +77,11 @@ def predict():
         return jsonify(error=f"Prediction failed: {str(e)}"), 500
 
 
-@app.route("/reload", methods=["POST"])
+@app.route("/reload", methods=["GET"])
 def reload_model():
     """Reload model from MLflow and store in Flask app config."""
     try:
-        model = mlflow.pyfunc.load_model(model_uri=f"models:/{MODEL_NAME}/{MODEL_STAGE}")
+        model = mlflow.pyfunc.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
         app.config["MODEL"] = model
         return jsonify(message="Model reloaded successfully.")
     except Exception as e:

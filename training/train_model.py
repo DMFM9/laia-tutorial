@@ -9,6 +9,17 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for CI
 import matplotlib.pyplot as plt
 
+COMMIT_SHA = os.getenv('COMMIT_SHA')
+if not COMMIT_SHA:
+    raise EnvironmentError("Missing required env var: COMMIT_SHA")
+
+MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
+if not MODEL_NAME:
+    raise EnvironmentError("Missing required env var: MLFLOW_MODEL_NAME")
+
+EXP_NAME = os.getenv('MLFLOW_EXPERIMENT_NAME')
+if not EXP_NAME:
+    raise EnvironmentError("Missing required env var: MLFLOW_EXPERIMENT_NAME")
 
 def train_model():
     """Train iris classification model and log to MLflow."""
@@ -17,8 +28,7 @@ def train_model():
     mlflow.set_tracking_uri(mlflow_uri)
     
     # Set experiment
-    experiment_name = "iris_classification_ci"
-    mlflow.set_experiment(experiment_name)
+    mlflow.set_experiment(EXP_NAME)
     
     # Load data
     X, y = load_iris(return_X_y=True)
@@ -80,18 +90,26 @@ def train_model():
     model_uri = f"runs:/{best_run_id}/model"
     
     try:
-        registered_model = mlflow.register_model(model_uri, "iris")
+        registered_model = mlflow.register_model(model_uri, MODEL_NAME)
         print(f"Registered model version: {registered_model.version}")
         
         # Promote to Production (required for Flask app to load it)
         from mlflow.tracking import MlflowClient
+        # Assign alias (e.g., production)
         client = MlflowClient()
-        client.transition_model_version_stage(
-            name="iris",
+        client.set_registered_model_alias(
+            name=MODEL_NAME,
+            alias="staging",  # or "staging", "canary", etc.
             version=registered_model.version,
-            stage="Production",
-            archive_existing_versions=True
         )
+
+        # Create alias for commit SHA (truncate for readability)
+        client.set_registered_model_alias(
+            name=MODEL_NAME,
+            alias=COMMIT_SHA,
+            version=registered_model.version,
+        )
+
         print(f"✓ Model version {registered_model.version} promoted to Production")
         
     except Exception as e:
