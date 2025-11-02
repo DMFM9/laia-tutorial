@@ -85,13 +85,14 @@ def train_model():
         
         # Promote to Production (required for Flask app to load it)
         from mlflow.tracking import MlflowClient
+        # Assign alias (e.g., production)
         client = MlflowClient()
-        client.transition_model_version_stage(
+        client.set_registered_model_alias(
             name="iris",
+            alias="production",  # or "staging", "canary", etc.
             version=registered_model.version,
-            stage="Production",
-            archive_existing_versions=True
         )
+
         print(f"✓ Model version {registered_model.version} promoted to Production")
         
     except Exception as e:

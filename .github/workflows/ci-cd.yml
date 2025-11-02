@@ -51,7 +51,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Flask image
+      - name: Build training image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -63,14 +63,14 @@ jobs:
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/training.tar
 
-      - name: Upload Flask image artifact
+      - name: Upload training image artifact
         uses: actions/upload-artifact@v4
         with:
           name: training-image
           path: /tmp/training.tar
           retention-days: 1
 
-      - name: Build Flask image
+      - name: Build serving image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -82,7 +82,7 @@ jobs:
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/serving.tar
       
-      - name: Upload Flask image artifact
+      - name: Upload serving image artifact
         uses: actions/upload-artifact@v4
         with:
           name: serving-image
@@ -230,22 +230,23 @@ jobs:
       - name: Apply labels to loaded image
         shell: bash
         run: |
-          IMAGE_ID=$(docker images --format "{{.ID}}" --filter reference='flask-ci:*' | head -n 1)
-
-          # Capture labels from metadata output safely
+          # Find the loaded image ID (from CI artifact)
+          IMAGE_ID=$(docker images --format "{{.ID}}" --filter reference='serving:*' | head -n 1)
+          
+          # Get labels from metadata
           LABELS="${{ steps.meta.outputs.labels }}"
-
-          LABEL_ARGS=""
+          
+          CHANGE_ARGS=""
           while IFS= read -r LABEL; do
-            # Skip empty lines
             [ -z "$LABEL" ] && continue
-            LABEL_ARGS="$LABEL_ARGS --label \"$LABEL\""
+            CHANGE_ARGS="$CHANGE_ARGS --change \"LABEL $LABEL\""
           done <<< "$LABELS"
-
+          
           echo "Applying labels:"
           echo "$LABELS"
-
-          eval docker commit $LABEL_ARGS "$IMAGE_ID" promoted-image:latest
+          
+          # Commit new image layer with labels applied
+          eval docker commit $CHANGE_ARGS "$IMAGE_ID" promoted-image:latest
 
       # Tag promoted image with all metadata-action tags
       - name: Tag promoted image

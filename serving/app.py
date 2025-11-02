@@ -18,12 +18,12 @@ if os.getenv("MLFLOW_TRACKING_PASSWORD"):
 app = Flask(__name__)
 
 MODEL_NAME = "iris"
-MODEL_STAGE = "Production"
+MODEL_STAGE = "production"
 
 # Try to load model once on startup
 try:
     app.config["MODEL"] = mlflow.pyfunc.load_model(
-        model_uri=f"models:/{MODEL_NAME}/{MODEL_STAGE}"
+        model_uri=f"models:/{MODEL_NAME}@{MODEL_STAGE}"
     )
     print("Model loaded successfully at startup.")
 except Exception as e:
@@ -68,7 +68,7 @@ def predict():
 def reload_model():
     """Reload model from MLflow and store in Flask app config."""
     try:
-        model = mlflow.pyfunc.load_model(model_uri=f"models:/{MODEL_NAME}/{MODEL_STAGE}")
+        model = mlflow.pyfunc.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_STAGE}")
         app.config["MODEL"] = model
         return jsonify(message="Model reloaded successfully.")
     except Exception as e:
