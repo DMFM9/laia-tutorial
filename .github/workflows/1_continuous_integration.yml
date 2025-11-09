@@ -72,8 +72,9 @@ jobs:
       # Tag training image with current commit sha
       # This image will not be used anymore, thus will not be promoted to staging or production so it is linked only to the commit
       # Push training image to repository
+  
       - name: Push training image
-      - run: |
+        run: |
           docker tag training:${{ github.sha }} ghcr.io/dmfm9/laia-tutorial/training:${{ github.sha }}
           docker push ghcr.io/dmfm9/laia-tutorial/training:${{ github.sha }}
       # Tag serving image with commit sha; this image will be used for further testing in the following workflows
