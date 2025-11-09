@@ -74,8 +74,8 @@ jobs:
       # Push training image to repository
       - name: Push training image
       - run: |
-        docker tag training:${{ github.sha }} ${{ env.REGISTRY }}/${{ github.repository }}/training:${{ github.sha }}
-        docker push ${{ env.REGISTRY }}/${{ github.repository }}/training:${{ github.sha }}
+          docker tag training:${{ github.sha }} ghcr.io/dmfm9/laia-tutorial/training:${{ github.sha }}
+          docker push ghcr.io/dmfm9/laia-tutorial/training:${{ github.sha }}
       # Tag serving image with commit sha; this image will be used for further testing in the following workflows
       # Push serving image to repository
       - name: Push serving staging image
