@@ -30,6 +30,7 @@ jobs:
         with: { python-version: '3.13' }
       - run: pip install uv
 
+
       # Log in to GitHub Container Registry (GHCR)
       # We will get the serving image with tag staging from here to validate
       - uses: docker/login-action@v3
@@ -39,10 +40,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Download training image built in the previous stage
-      - name: Pull training image
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          docker pull ${{ env.REGISTRY }}/$REPO_LOWER/training:${{ github.sha }}
+      - run: docker pull ${{ env.REGISTRY }}/${{ github.repository | lower }}/training:${{ github.sha }}
 
       # Run training container which runs the training script within
       # The training script will select the "best" model and tag it with the sha of the commit in mlflow
@@ -55,7 +53,6 @@ jobs:
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           docker run --rm \
             -e MLFLOW_TRACKING_URI \
             -e MLFLOW_TRACKING_USERNAME \
@@ -63,13 +60,10 @@ jobs:
             -e MLFLOW_MODEL_NAME \
             -e MLFLOW_EXPERIMENT_NAME \
             -e COMMIT_SHA \
-            ${{ env.REGISTRY }}/$REPO_LOWER/training:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/training:${{ github.sha }}
 
       # Download serving image built in the previous stage
-      - name: Pull serving image
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          docker pull ${{ env.REGISTRY }}/$REPO_LOWER/serving:${{ github.sha }}
+      - run: docker pull ${{ env.REGISTRY }}/${{ github.repository | lower }}/serving:${{ github.sha }}
 
       # Start serving image
       # It is configured to load the model passed in env variable MLFLOW_MODEL_NAME and alias MODEL_ALIAS
@@ -81,7 +75,6 @@ jobs:
           MODEL_ALIAS: ${{ github.sha }}
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
         run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           docker run -d \
             --name serving-app \
             -p 8080:8080 \
@@ -90,7 +83,7 @@ jobs:
             -e MLFLOW_TRACKING_PASSWORD \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
-            ${{ env.REGISTRY }}/$REPO_LOWER/serving:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/serving:${{ github.sha }}
           
           # Wait for Flask to be ready
           sleep 10
@@ -118,11 +111,9 @@ jobs:
       # Push serving image to repository
       - name: Push serving staging image
         run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          docker tag ${{ env.REGISTRY }}/$REPO_LOWER/serving:${{ github.sha }} \
-                     ${{ env.REGISTRY }}/$REPO_LOWER/serving:staging
-          docker push ${{ env.REGISTRY }}/$REPO_LOWER/serving:staging
-
+          docker tag ${{ env.REGISTRY }}/${{ github.repository | lower }}/serving:${{ github.sha }} \
+               ${{ env.REGISTRY }}/${{ github.repository | lower }}/serving:staging
+          docker push ${{ env.REGISTRY }}/${{ github.repository | lower }}/serving:staging
       # Promote selected model to staging to be further validated
       # The script will look for the MLFLOW_MODEL_NAME and promote it from FROM_ALIAS to TO_ALIAS
       - name: Promote model to staging
@@ -135,3 +126,4 @@ jobs:
           FROM_ALIAS: ${{ github.sha }}
           TO_ALIAS: staging
         run: uv run python model-promotion/promote_model.py
+
