@@ -127,3 +127,4 @@ jobs:
           FROM_ALIAS: ${{ github.sha }}
           TO_ALIAS: staging
         run: uv run python model-promotion/promote_model.py
+
